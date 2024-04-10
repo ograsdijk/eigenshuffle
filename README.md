@@ -1,5 +1,5 @@
 [![Python versions on PyPI](https://img.shields.io/pypi/pyversions/eigenshuffle.svg)](https://pypi.python.org/pypi/eigenshuffle/)
-[![CeNTREX-TlF version on PyPI](https://img.shields.io/pypi/v/eigenshuffle.svg "CeNTREX-TlF on PyPI")](https://pypi.python.org/pypi/eigenshuffle/)
+[![CeNTREX-TlF version on PyPI](https://img.shields.io/pypi/v/eigenshuffle.svg "eigenshuffle on PyPI")](https://pypi.python.org/pypi/eigenshuffle/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
