@@ -19,6 +19,7 @@ pip install eigenshuffle
 or clone repo and install with `pip` or directly install from GitHub with:  
 ```
 pip install git+https://github.com/ograsdijk/eigenshuffle
+pip install git+https://github.com/ograsdijk/eigenshuffle
 ```
 
 # Example
