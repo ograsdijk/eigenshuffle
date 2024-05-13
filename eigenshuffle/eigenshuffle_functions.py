@@ -74,7 +74,7 @@ def _shuffle(
             distance *= dist_vals
 
         # Is there a best permutation? use munkres.
-        reorder = m.compute(distance.T)
+        reorder = m.compute(distance)
         reorder = [coord[1] for coord in reorder]
 
         eigenvectors[i] = eigenvectors[i][:, reorder]

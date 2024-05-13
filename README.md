@@ -18,7 +18,7 @@ pip install eigenshuffle
 
 or clone repo and install with `pip` or directly install from GitHub with:  
 ```
-pip install git+https://github.com/ograsdijk/CeNTREX-trajectories
+pip install git+https://github.com/ograsdijk/eigenshuffle
 ```
 
 # Example
@@ -68,5 +68,5 @@ ax.legend([line1, line2], ["sorted", "eigenshuffle"])
 ax.grid()
 
 ```
-![consistenly sorted eigenvalues](/images/sorted_vs_unsorted.png)  
+![consistenly sorted eigenvalues](https://raw.githubusercontent.com/ograsdijk/eigenshuffle/main/images/sorted_vs_unsorted.png)  
 Here the eigenvalues are consistently ordered, and are not switching positions after a level crossing (around t=0.3) when using `eigenshuffle`.
