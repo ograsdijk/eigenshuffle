@@ -6,8 +6,8 @@ from eigenshuffle import eigenshuffle_eig, eigenshuffle_eigh
 
 def test_eigenshuffle_hermitian():
     def eigenvalue_function(
-        t: float | npt.NDArray[np.float_],
-    ) -> npt.NDArray[np.float_]:
+        t: float | npt.NDArray[np.floating],
+    ) -> npt.NDArray[np.floating]:
         return np.array(
             [
                 [1, 2 * t + 1, t**2, t**3],
@@ -186,7 +186,7 @@ def test_eigenshuffle_hermitian():
 def test_eigenshuffle():
     def eigenvalue_function(
         t: float,
-    ) -> npt.NDArray[np.float_]:
+    ) -> npt.NDArray[np.floating]:
         return np.array(
             [
                 [1, 2 * t + 1, t**2, t**3],

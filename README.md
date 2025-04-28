@@ -32,7 +32,7 @@ from eigenshuffle import eigenshuffle_eig
 
 def eigenvalue_function(
     t: float,
-) -> npt.NDArray[np.float_]:
+) -> npt.NDArray[np.floating]:
     return np.array(
         [
             [1, 2 * t + 1, t**2, t**3],

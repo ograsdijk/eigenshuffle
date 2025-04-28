@@ -8,29 +8,29 @@ __all__ = ["eigenshuffle_eig", "eigenshuffle_eigh"]
 
 eigenvals_complex_or_float = TypeVar(
     "eigenvals_complex_or_float",
-    npt.NDArray[np.float_],
-    npt.NDArray[np.complex_],
+    npt.NDArray[np.floating],
+    npt.NDArray[np.complexfloating],
 )
 
 eigenvecs_complex_or_float = TypeVar(
     "eigenvecs_complex_or_float",
-    npt.NDArray[np.float_],
-    npt.NDArray[np.complex_],
+    npt.NDArray[np.floating],
+    npt.NDArray[np.complexfloating],
 )
 
 
 def distance_matrix(
-    vec1: npt.NDArray[np.float_], vec2: npt.NDArray[np.float_]
-) -> npt.NDArray[np.float_]:
+    vec1: npt.NDArray[np.floating], vec2: npt.NDArray[np.floating]
+) -> npt.NDArray[np.floating]:
     """
     Compute the interpoint distance matrix
 
     Args:
-        vec1 (npt.NDArray[np.float_]): vector1
-        vec2 (npt.NDArray[np.float_]): vector2
+        vec1 (npt.NDArray[np.floating]): vector1
+        vec2 (npt.NDArray[np.floating]): vector2
 
     Returns:
-        npt.NDArray[np.float_]: interpoint distance matrix between vector1 and vector2
+        npt.NDArray[np.floating]: interpoint distance matrix between vector1 and vector2
     """
     return np.abs(vec1[:, np.newaxis] - vec2[np.newaxis, :]).T
 
@@ -117,28 +117,28 @@ def _reorder(
 
 @overload
 def _eigenshuffle(
-    matrices: Sequence[npt.NDArray[np.float_]]
-    | npt.NDArray[np.float_]
-    | Sequence[npt.NDArray[np.complex_]]
-    | npt.NDArray[np.complex_],
+    matrices: Sequence[npt.NDArray[np.floating]]
+    | npt.NDArray[np.floating]
+    | Sequence[npt.NDArray[np.complexfloating]]
+    | npt.NDArray[np.complexfloating],
     hermitian: Literal[True],
     use_eigenvalues: bool,
 ) -> tuple[
-    npt.NDArray[np.float_], npt.NDArray[np.float_] | npt.NDArray[np.complex_]
+    npt.NDArray[np.floating], npt.NDArray[np.floating] | npt.NDArray[np.complexfloating]
 ]: ...
 
 
 @overload
 def _eigenshuffle(
-    matrices: Sequence[npt.NDArray[np.float_]]
-    | npt.NDArray[np.float_]
-    | Sequence[npt.NDArray[np.complex_]]
-    | npt.NDArray[np.complex_],
+    matrices: Sequence[npt.NDArray[np.floating]]
+    | npt.NDArray[np.floating]
+    | Sequence[npt.NDArray[np.complexfloating]]
+    | npt.NDArray[np.complexfloating],
     hermitian: Literal[False],
     use_eigenvalues: bool,
 ) -> tuple[
-    npt.NDArray[np.float_] | npt.NDArray[np.complex_],
-    npt.NDArray[np.float_] | npt.NDArray[np.complex_],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
 ]: ...
 
 
@@ -178,14 +178,14 @@ def _eigenshuffle(
 
 
 def eigenshuffle_eigh(
-    matrices: Sequence[npt.NDArray[np.float_]]
-    | npt.NDArray[np.float_]
-    | Sequence[npt.NDArray[np.complex_]]
-    | npt.NDArray[np.complex_],
+    matrices: Sequence[npt.NDArray[np.floating]]
+    | npt.NDArray[np.floating]
+    | Sequence[npt.NDArray[np.complexfloating]]
+    | npt.NDArray[np.complexfloating],
     use_eigenvalues: bool = True,
 ) -> tuple[
-    npt.NDArray[np.float_],
-    npt.NDArray[np.float_] | npt.NDArray[np.complex_],
+    npt.NDArray[np.floating],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
 ]:
     """
     Compute eigenvalues and eigenvectors with eigh (hermitian) of a series of matrices
@@ -193,24 +193,24 @@ def eigenshuffle_eigh(
     lowest eigenvalue.
 
     Args:
-        matrices (Sequence[npt.NDArray[np.float_]] | npt.NDArray[np.float_] | Sequence[npt.NDArray[np.complex_]] | npt.NDArray[np.complex_]): mxnxn array of eigenvalue problems
+        matrices (Sequence[npt.NDArray[np.floating]] | npt.NDArray[np.floating] | Sequence[npt.NDArray[np.complexfloating]] | npt.NDArray[np.complexfloating]): mxnxn array of eigenvalue problems
         use_eigenvalues (bool, optional): Use the distance between successive eigenvalues as part of the shuffling. Defaults to False.
 
     Returns:
-        tuple[ npt.NDArray[np.float_], npt.NDArray[np.float_] | npt.NDArray[np.complex_], ]: sorted eigenvalues and eigenvectors
+        tuple[ npt.NDArray[np.floating], npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], ]: sorted eigenvalues and eigenvectors
     """
     return _eigenshuffle(matrices, hermitian=True, use_eigenvalues=use_eigenvalues)
 
 
 def eigenshuffle_eig(
-    matrices: Sequence[npt.NDArray[np.float_]]
-    | npt.NDArray[np.float_]
-    | Sequence[npt.NDArray[np.complex_]]
-    | npt.NDArray[np.complex_],
+    matrices: Sequence[npt.NDArray[np.floating]]
+    | npt.NDArray[np.floating]
+    | Sequence[npt.NDArray[np.complexfloating]]
+    | npt.NDArray[np.complexfloating],
     use_eigenvalues: bool = False,
 ) -> tuple[
-    npt.NDArray[np.float_] | npt.NDArray[np.complex_],
-    npt.NDArray[np.float_] | npt.NDArray[np.complex_],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
 ]:
     """
     Compute eigenvalues and eigenvectors with eig of a series of matrices (mxnxn) and
@@ -218,10 +218,10 @@ def eigenshuffle_eig(
     eigenvalue.
 
     Args:
-        matrices (Sequence[npt.NDArray[np.float_]] | npt.NDArray[np.float_] | Sequence[npt.NDArray[np.complex_]] | npt.NDArray[np.complex_]): mxnxn array of eigenvalue problems
+        matrices (Sequence[npt.NDArray[np.floating]] | npt.NDArray[np.floating] | Sequence[npt.NDArray[np.complexfloating]] | npt.NDArray[np.complexfloating]): mxnxn array of eigenvalue problems
         use_eigenvalues (bool, optional): Use the distance between successive eigenvalues as part of the shuffling. Defaults to False.
 
     Returns:
-        tuple[ npt.NDArray[np.float_] | npt.NDArray[np.complex_], npt.NDArray[np.float_] | npt.NDArray[np.complex_], ]: sorted eigenvalues and eigenvectors
+        tuple[ npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], ]: sorted eigenvalues and eigenvectors
     """
     return _eigenshuffle(matrices, hermitian=False, use_eigenvalues=use_eigenvalues)
