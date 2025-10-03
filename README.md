@@ -19,7 +19,6 @@ pip install eigenshuffle
 or clone repo and install with `pip` or directly install from GitHub with:  
 ```
 pip install git+https://github.com/ograsdijk/eigenshuffle
-pip install git+https://github.com/ograsdijk/eigenshuffle
 ```
 
 # Example
@@ -56,8 +55,8 @@ e = np.sort(e)
 fig, ax = plt.subplots()
 lines = ax.plot(tseq, e)
 
-for i in range(ei.shape[-1]):
-    ax.plot(tseq, ei.real[:, i], "--", color=lines[i].get_color())
+for i in range(es.shape[-1]):
+    ax.plot(tseq, es.real[:, i], "--", color=lines[i].get_color())
 
 # for generating the legend
 line1 = plt.Line2D([0, 1], [0, 1], linestyle="-", color="black")

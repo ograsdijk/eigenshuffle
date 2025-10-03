@@ -1,8 +1,8 @@
 from typing import Literal, Sequence, TypeVar, overload
 
-import munkres
 import numpy as np
 import numpy.typing as npt
+from scipy.optimize import linear_sum_assignment
 
 __all__ = ["eigenshuffle_eig", "eigenshuffle_eigh"]
 
@@ -19,20 +19,21 @@ eigenvecs_complex_or_float = TypeVar(
 )
 
 
-def distance_matrix(
+def eigval_cost(
     vec1: npt.NDArray[np.floating], vec2: npt.NDArray[np.floating]
 ) -> npt.NDArray[np.floating]:
     """
-    Compute the interpoint distance matrix
+    Compute the interpoint distance matrix between two sets of eigenvalues.
 
     Args:
-        vec1 (npt.NDArray[np.floating]): vector1
-        vec2 (npt.NDArray[np.floating]): vector2
+        vec1 (npt.NDArray[np.floating]): First eigenvalue array.
+        vec2 (npt.NDArray[np.floating]): Second eigenvalue array.
 
     Returns:
-        npt.NDArray[np.floating]: interpoint distance matrix between vector1 and vector2
+        npt.NDArray[np.floating]: Cost matrix of absolute differences between
+        elements of vec1 and vec2, with shape (len(vec1), len(vec2)).
     """
-    return np.abs(vec1[:, np.newaxis] - vec2[np.newaxis, :]).T
+    return np.abs(vec1[:, np.newaxis] - vec2[np.newaxis, :])
 
 
 def _shuffle(
@@ -42,13 +43,15 @@ def _shuffle(
 ) -> tuple[eigenvals_complex_or_float, eigenvecs_complex_or_float]:
     """
     Consistently reorder eigenvalues/vectors based on the initial ordering. Uses the
-    Hungarian Algorithm to solve the assignment problem of with eigenvalue/vector pair
-    most closely matches another. The distance function uses here is:
-        (1 - np.abs(V1.T @ V2))*np.sqrt(
-            distance_matrix(D1.real, D2.real) ** 2
-            + distance_matrix(D1.imag, D2.imag) ** 2
+    Hungarian Algorithm (via scipy.optimize.linear_sum_assignment) to solve the
+    assignment problem of which eigenvalue/vector pair most closely matches another.
+
+    The distance function used here is:
+        (1 - np.abs(V1.conj().T @ V2)) * np.sqrt(
+            eigval_cost(D1.real, D2.real)**2
+            + eigval_cost(D1.imag, D2.imag)**2
         )
-    where distance_matrix computes the interpoint distance matrix and D,V are the
+    where eigval_cost computes the interpoint distance matrix and D, V are the
     eigenvalues/vectors, respectively.
 
     Args:
@@ -57,34 +60,44 @@ def _shuffle(
         use_eigenvalues (bool, optional): bool specifying use of eigenvalues in distance calculation. Defaults to True.
 
     Returns:
-        tuple[eigenvals_complex_or_float, eigenvecs_complex_or_float]: consistently ordered eigenvalues/vectors.
+        tuple[eigenvals_complex_or_float, eigenvecs_complex_or_float]:
+            consistently ordered eigenvalues/vectors.
     """
-    m = munkres.Munkres()
     for i in range(1, len(eigenvalues)):
         # compute distance between systems
         D1, D2 = eigenvalues[i - 1 : i + 1]
         V1, V2 = eigenvectors[i - 1 : i + 1]
 
-        distance = 1 - np.abs(V1.T @ V2)
+        distance = 1 - np.abs(V1.conj().T @ V2)
+
         if use_eigenvalues:
             dist_vals = np.sqrt(
-                distance_matrix(D1.real, D2.real) ** 2
-                + distance_matrix(D1.imag, D2.imag) ** 2
+                eigval_cost(D1.real, D2.real) ** 2 + eigval_cost(D1.imag, D2.imag) ** 2
             )
             distance *= dist_vals
 
-        # Is there a best permutation? use munkres.
-        reorder = m.compute(distance)
-        reorder = [coord[1] for coord in reorder]
+        # Solve the assignment: rows = previous states, cols = current states
+        row_ind, col_ind = linear_sum_assignment(distance)
+        # row_ind should be [0,1,...,n-1] for a square cost. If you want, assert this:
+        # assert np.array_equal(row_ind, np.arange(distance.shape[0]))
+        eigenvectors[i] = eigenvectors[i][:, col_ind]
+        eigenvalues[i] = eigenvalues[i, col_ind]
 
-        eigenvectors[i] = eigenvectors[i][:, reorder]
-        eigenvalues[i] = eigenvalues[i, reorder]
+        # phase/sign alignment (real- and complex-safe)
+        V_prev = eigenvectors[i - 1]
+        V_curr = eigenvectors[i]
+        overlaps = np.sum(V_prev.conj() * V_curr, axis=0)  # per-column ⟨v_prev|v_curr⟩
+        tol = 1e-12
 
-        # also ensure the signs of each eigenvector pair
-        # were consistent if possible
-        S = np.squeeze(np.sum(eigenvectors[i - 1] * eigenvectors[i], 0).real) < 0
-
-        eigenvectors[i] = eigenvectors[i] * (-S.astype(int) * 2 - 1)
+        if np.isrealobj(V_prev) and np.isrealobj(V_curr):
+            # keep arrays real: just flip signs using the real overlap
+            signs = np.where(overlaps.real < 0.0, -1.0, 1.0)
+            eigenvectors[i] = V_curr * signs
+        else:
+            # complex phase alignment; avoid unstable rotation when |overlap|≈0
+            denom = np.maximum(np.abs(overlaps), tol)
+            phases = overlaps.conj() / denom
+            eigenvectors[i] = V_curr * phases
 
     return eigenvalues, eigenvectors
 
@@ -124,7 +137,8 @@ def _eigenshuffle(
     hermitian: Literal[True],
     use_eigenvalues: bool,
 ) -> tuple[
-    npt.NDArray[np.floating], npt.NDArray[np.floating] | npt.NDArray[np.complexfloating]
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
 ]: ...
 
 
@@ -143,10 +157,16 @@ def _eigenshuffle(
 
 
 def _eigenshuffle(
-    matrices,
-    hermitian,
-    use_eigenvalues,
-):
+    matrices: Sequence[npt.NDArray[np.floating]]
+    | npt.NDArray[np.floating]
+    | Sequence[npt.NDArray[np.complexfloating]]
+    | npt.NDArray[np.complexfloating],
+    hermitian: bool,
+    use_eigenvalues: bool,
+) -> tuple[
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
+]:
     """
     Consistently reorder eigenvalues and eigenvectors based on the initial ordering,
     which sorts the eigenvalues from low to
@@ -184,7 +204,7 @@ def eigenshuffle_eigh(
     | npt.NDArray[np.complexfloating],
     use_eigenvalues: bool = True,
 ) -> tuple[
-    npt.NDArray[np.floating],
+    npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
     npt.NDArray[np.floating] | npt.NDArray[np.complexfloating],
 ]:
     """
@@ -194,10 +214,10 @@ def eigenshuffle_eigh(
 
     Args:
         matrices (Sequence[npt.NDArray[np.floating]] | npt.NDArray[np.floating] | Sequence[npt.NDArray[np.complexfloating]] | npt.NDArray[np.complexfloating]): mxnxn array of eigenvalue problems
-        use_eigenvalues (bool, optional): Use the distance between successive eigenvalues as part of the shuffling. Defaults to False.
+        use_eigenvalues (bool, optional): Use the distance between successive eigenvalues as part of the shuffling. Defaults to True.
 
     Returns:
-        tuple[ npt.NDArray[np.floating], npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], ]: sorted eigenvalues and eigenvectors
+        tuple[ npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], ]: sorted eigenvalues and eigenvectors
     """
     return _eigenshuffle(matrices, hermitian=True, use_eigenvalues=use_eigenvalues)
 
@@ -220,6 +240,8 @@ def eigenshuffle_eig(
     Args:
         matrices (Sequence[npt.NDArray[np.floating]] | npt.NDArray[np.floating] | Sequence[npt.NDArray[np.complexfloating]] | npt.NDArray[np.complexfloating]): mxnxn array of eigenvalue problems
         use_eigenvalues (bool, optional): Use the distance between successive eigenvalues as part of the shuffling. Defaults to False.
+            This default is different from `eigenshuffle_eigh` because for non-hermitian matrices, eigenvalues can be complex and their distance
+            is less meaningful for sorting than for real eigenvalues from hermitian matrices.
 
     Returns:
         tuple[ npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], npt.NDArray[np.floating] | npt.NDArray[np.complexfloating], ]: sorted eigenvalues and eigenvectors
